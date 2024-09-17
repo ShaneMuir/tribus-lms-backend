@@ -7,8 +7,9 @@ require_once( $functions_dir.'custom-wp.php' );
 require_once( $functions_dir.'disable-comments.php' );
 require_once( $functions_dir.'disable-posts-and-pages.php' );
 
-
-function tribus_register_challenge_cpt() {
+// Register Custom Post Type for Challenges
+function tribus_register_challenge_cpt(): void
+{
     $labels = array(
         'name'               => _x( 'Challenges', 'post type general name' ),
         'singular_name'      => _x( 'Challenge', 'post type singular name' ),
@@ -39,14 +40,16 @@ function tribus_register_challenge_cpt() {
         'hierarchical'       => false,
         'menu_position'      => 5,
         'menu_icon'          => 'dashicons-welcome-learn-more',
-        'supports'           => array( 'title', 'editor', 'author', 'thumbnail', 'custom-fields' ),
+        'supports'           => array( 'title', 'editor' ),
     );
 
     register_post_type( 'challenge', $args );
 }
 add_action( 'init', 'tribus_register_challenge_cpt' );
 
-function tribus_add_challenge_meta_boxes() {
+// Add Meta Boxes for Starter Code and Test Cases
+function tribus_add_challenge_meta_boxes(): void
+{
     add_meta_box(
         'tribus_challenge_details',
         'Challenge Details',
@@ -58,29 +61,125 @@ function tribus_add_challenge_meta_boxes() {
 }
 add_action( 'add_meta_boxes', 'tribus_add_challenge_meta_boxes' );
 
-function tribus_challenge_details_callback( $post ) {
-    $test_input = get_post_meta( $post->ID, '_tribus_test_input', true );
-    $expected_output = get_post_meta( $post->ID, '_tribus_expected_output', true );
+function tribus_challenge_details_callback( $post ): void
+{
+    // Retrieve stored values
+    $starter_code = get_post_meta( $post->ID, '_tribus_starter_code', true );
+    $test_cases = get_post_meta( $post->ID, '_tribus_test_cases', true );
+    $test_cases = is_array( $test_cases ) ? $test_cases : array( array( 'input' => '', 'output' => '' ) );
 
     ?>
+    <!-- Starter Code Field -->
     <p>
-        <label for="tribus_test_input">Test Input (Comma-separated):</label>
-        <input type="text" id="tribus_test_input" name="tribus_test_input" value="<?php echo esc_attr( $test_input ); ?>" />
+        <label for="tribus_starter_code">Starter Code:</label>
+        <textarea id="tribus_starter_code" name="tribus_starter_code" rows="8" style="width: 100%;"><?php echo esc_textarea( $starter_code ); ?></textarea>
     </p>
-    <p>
-        <label for="tribus_expected_output">Expected Output:</label>
-        <input type="text" id="tribus_expected_output" name="tribus_expected_output" value="<?php echo esc_attr( $expected_output ); ?>" />
-    </p>
+
+    <!-- Test Cases Repeater -->
+    <h4>Test Cases:</h4>
+    <div id="tribus-test-cases">
+        <?php foreach ( $test_cases as $index => $test_case ) : ?>
+            <div class="tribus-test-case" style="margin-bottom: 1rem;">
+                <label>Test Input:</label>
+                <input type="text" name="tribus_test_cases[<?php echo $index; ?>][input]" value="<?php echo esc_attr( $test_case['input'] ); ?>" style="width: 45%; margin-right: 5%;">
+                <label>Expected Output:</label>
+                <input type="text" name="tribus_test_cases[<?php echo $index; ?>][output]" value="<?php echo esc_attr( $test_case['output'] ); ?>" style="width: 45%;">
+                <button type="button" class="button remove-test-case" style="color: red; margin-left: 5px;">Remove</button>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <button type="button" class="button add-test-case">Add Test Case</button>
+
+    <script>
+        (function($){
+            $(document).ready(function() {
+                var testCaseIndex = <?php echo count( $test_cases ); ?>;
+
+                // Add new test case
+                $('.add-test-case').on('click', function() {
+                    var newTestCase = '<div class="tribus-test-case" style="margin-bottom: 1rem;">' +
+                        '<label>Test Input:</label>' +
+                        '<input type="text" name="tribus_test_cases[' + testCaseIndex + '][input]" value="" style="width: 45%; margin-right: 5%;">' +
+                        '<label>Expected Output:</label>' +
+                        '<input type="text" name="tribus_test_cases[' + testCaseIndex + '][output]" value="" style="width: 45%;">' +
+                        '<button type="button" class="button remove-test-case" style="color: red; margin-left: 5px;">Remove</button>' +
+                        '</div>';
+                    $('#tribus-test-cases').append(newTestCase);
+                    testCaseIndex++;
+                });
+
+                // Remove test case
+                $(document).on('click', '.remove-test-case', function() {
+                    $(this).parent().remove();
+                });
+            });
+        })(jQuery);
+    </script>
     <?php
 }
 
-function tribus_save_challenge_meta( $post_id ) {
-    if ( isset( $_POST['tribus_test_input'] ) ) {
-        update_post_meta( $post_id, '_tribus_test_input', sanitize_text_field( $_POST['tribus_test_input'] ) );
+// Save Meta Box Values
+function tribus_save_challenge_meta( $post_id ): void
+{
+    if ( isset( $_POST['tribus_starter_code'] ) ) {
+        update_post_meta( $post_id, '_tribus_starter_code', $_POST['tribus_starter_code'] );
     }
-    if ( isset( $_POST['tribus_expected_output'] ) ) {
-        update_post_meta( $post_id, '_tribus_expected_output', sanitize_text_field( $_POST['tribus_expected_output'] ) );
+
+    if ( isset( $_POST['tribus_test_cases'] ) ) {
+        $test_cases = array_map( function( $test_case ) {
+            return array(
+                'input'  => $test_case['input'],
+                'output' => $test_case['output']
+            );
+        }, $_POST['tribus_test_cases'] );
+        update_post_meta( $post_id, '_tribus_test_cases', $test_cases );
     }
 }
 add_action( 'save_post', 'tribus_save_challenge_meta' );
 
+// Use code editor to make it easier to write the starter challenge code
+function tribus_enqueue_code_editor(): void
+{
+    // Enqueue the code editor styles and scripts
+    wp_enqueue_code_editor( array( 'type' => 'text/x-php' ) );
+    wp_enqueue_script( 'tribus_code_editor_init', get_template_directory_uri() . '/js/code-editor-init.js', array( 'jquery' ), '1.0', true );
+}
+add_action( 'admin_enqueue_scripts', 'tribus_enqueue_code_editor' );
+
+function tribus_register_challenge_meta_rest_fields(): void
+{
+    // Register starter_code meta field for the REST API
+    register_meta('post', '_tribus_starter_code', array(
+        'type'         => 'string',
+        'description'  => 'Starter code for the challenge',
+        'single'       => true,
+        'show_in_rest' => true, // Enable it for the REST API
+    ));
+
+    // Register test_cases meta field for the REST API
+    register_meta('post', '_tribus_test_cases', array(
+        'type'         => 'array',
+        'description'  => 'Test cases for the challenge',
+        'single'       => true,
+        'show_in_rest' => array(
+            'schema' => array(
+                'type'       => 'array',
+                'items'      => array(
+                    'type'       => 'object',
+                    'properties' => array(
+                        'input'  => array(
+                            'type' => 'string',
+                        ),
+                        'output' => array(
+                            'type' => 'string',
+                        ),
+                    ),
+                ),
+            ),
+            'get_callback' => 'tribus_get_test_cases', // Custom function to retrieve the test cases TO IMPLEMENT LATER
+            'update_callback' => 'tribus_update_test_cases', // Custom function to update test cases TO IMPLEMENT LATER
+        ),
+    ));
+}
+
+add_action('rest_api_init', 'tribus_register_challenge_meta_rest_fields');
