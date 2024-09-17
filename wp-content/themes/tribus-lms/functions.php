@@ -48,7 +48,7 @@ function tribus_register_challenge_cpt(): void
         'hierarchical'       => false,
         'menu_position'      => 5,
         'menu_icon'          => 'dashicons-welcome-learn-more',
-        'supports'           => array( 'title', 'editor' ),
+        'supports'           => array( 'title', 'editor', 'custom-fields' ),
     );
 
     register_post_type( 'challenge', $args );
