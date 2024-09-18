@@ -61,3 +61,45 @@ add_action('user_register', 'ensure_custom_meta_for_users');
 add_action('wp_login', function($user_login, $user) {
     ensure_custom_meta_for_users($user->ID);
 }, 10, 2);
+
+function register_user_meta_fields(): void
+{
+    register_rest_field('user', 'progress', array(
+        'get_callback' => function($user) {
+            return get_user_meta($user['id'], 'progress', true);
+        },
+        'update_callback' => null,
+        'schema' => array(
+            'description' => 'Progress of the user',
+            'type' => 'array',
+            'context' => array('view', 'edit'),
+        ),
+    ));
+
+    register_rest_field('user', 'completed_challenges', array(
+        'get_callback' => function($user) {
+            return get_user_meta($user['id'], 'completed_challenges', true);
+        },
+        'update_callback' => null,
+        'schema' => array(
+            'description' => 'Completed challenges of the user',
+            'type' => 'array',
+            'context' => array('view', 'edit'),
+        ),
+    ));
+
+
+    register_rest_field('user', 'score', array(
+        'get_callback' => function($user) {
+            return get_user_meta($user['id'], 'score', true);
+        },
+        'update_callback' => null,
+        'schema' => array(
+            'description' => 'Score of the user',
+            'type' => 'integer',
+            'context' => array('view', 'edit'),
+        ),
+    ));
+}
+
+add_action('rest_api_init', 'register_user_meta_fields');
