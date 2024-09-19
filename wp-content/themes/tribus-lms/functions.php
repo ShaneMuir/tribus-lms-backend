@@ -23,3 +23,4 @@ require_once( $functions_dir.'custom-code-editor.php' );
 require_once( $functions_dir.'custom-get-progress.php' );
 require_once( $functions_dir.'custom-register.php' );
 require_once( $functions_dir.'custom-update-progress.php' );
+require_once( $functions_dir.'custom-cors.php' );

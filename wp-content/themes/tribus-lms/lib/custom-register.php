@@ -1,4 +1,9 @@
 <?php
+
+// Function to generate JWT token
+use Firebase\JWT\JWT;
+use Firebase\JWT\ExpiredException;
+
 // Custom Register REST API endpoint
 function custom_register_user_endpoint(): void
 {
@@ -8,6 +13,7 @@ function custom_register_user_endpoint(): void
     ));
 }
 add_action('rest_api_init', 'custom_register_user_endpoint');
+
 function custom_register_user(WP_REST_Request $request): WP_Error|WP_REST_Response
 {
     $username = sanitize_text_field($request->get_param('username'));
@@ -31,11 +37,50 @@ function custom_register_user(WP_REST_Request $request): WP_Error|WP_REST_Respon
     }
 
     // Add custom meta fields
-    update_user_meta($user_id, 'progress', 0); // Optionally track overall progress
-    update_user_meta($user_id, 'score', 0); // Initialize score at 0
-    update_user_meta($user_id, 'completed_challenges', array()); // Initialize empty array for completed challenges
+    update_user_meta($user_id, 'progress', 0);
+    update_user_meta($user_id, 'score', 0);
+    update_user_meta($user_id, 'completed_challenges', array());
 
-    return new WP_REST_Response(array('message' => 'User created successfully'), 200);
+    // Get the user score
+    $user_score = get_user_meta($user_id, 'score', true);
+
+    // Generate JWT token
+    $token = generate_jwt_token($user_id);
+
+    // Prepare user data to return
+    $user_data = [
+        'id' => $user_id,
+        'username' => $username,
+        'email' => $email,
+        'score' => $user_score,
+    ];
+
+    return new WP_REST_Response(array(
+        'message' => 'User created successfully',
+        'token' => $token,
+        'user' => $user_data
+    ), 200);
+}
+
+function generate_jwt_token($user_id): string
+{
+    // Define your JWT secret key and algorithm
+    $algorithm = 'HS256'; // The algorithm you are using
+
+    // Create the token payload
+    $payload = [
+        'iat' => time(), // Issued at
+        'exp' => time() + (60 * 60), // Expiration time (1 hour)
+        'data' => array(
+            'user' => array(
+                'id' => $user_id
+            )
+        ),
+        'iss' => get_bloginfo('url'),
+    ];
+
+    // Generate the JWT token
+    return JWT::encode($payload, JWT_AUTH_SECRET_KEY, $algorithm);
 }
 
 function ensure_custom_meta_for_users($user_id): void
