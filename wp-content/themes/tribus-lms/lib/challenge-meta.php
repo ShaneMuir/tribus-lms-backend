@@ -17,8 +17,9 @@ function tribus_challenge_details_callback( $post ): void
 {
     // Retrieve stored values
     $starter_code = get_post_meta( $post->ID, '_tribus_starter_code', true );
-    $test_cases = get_post_meta( $post->ID, '_tribus_test_cases', true );
-    $test_cases = is_array( $test_cases ) ? $test_cases : array( array( 'input' => '', 'output' => '' ) );
+    $test_cases   = get_post_meta( $post->ID, '_tribus_test_cases', true );
+    $test_cases   = is_array( $test_cases ) ? $test_cases : array( array( 'input' => '', 'output' => '' ) );
+    $difficulty   = get_post_meta( $post->ID, '_tribus_difficulty', true );
 
     ?>
     <!-- Starter Code Field -->
@@ -67,6 +68,17 @@ function tribus_challenge_details_callback( $post ): void
             });
         })(jQuery);
     </script>
+
+    <!-- Difficulty Field -->
+    <p>
+        <label for="tribus_difficulty">Difficulty:</label>
+        <select id="tribus_difficulty" name="tribus_difficulty">
+            <option value="" <?php selected($difficulty, ''); ?>>Select Difficulty</option>
+            <option value="easy" <?php selected($difficulty, 'easy'); ?>>Easy</option>
+            <option value="medium" <?php selected($difficulty, 'medium'); ?>>Medium</option>
+            <option value="hard" <?php selected($difficulty, 'hard'); ?>>Hard</option>
+        </select>
+    </p>
     <?php
 }
 
@@ -85,6 +97,27 @@ function tribus_save_challenge_meta( $post_id ): void
             );
         }, $_POST['tribus_test_cases'] );
         update_post_meta( $post_id, '_tribus_test_cases', $test_cases );
+    }
+
+    // Save difficulty
+    if (isset($_POST['tribus_difficulty'])) {
+        $difficulty = sanitize_text_field($_POST['tribus_difficulty']);
+        update_post_meta($post_id, '_tribus_difficulty', $difficulty);
+
+        // Determine score based on difficulty
+        $score = 0;
+        switch ($difficulty) {
+            case 'easy':
+                $score = 50;
+                break;
+            case 'medium':
+                $score = 100;
+                break;
+            case 'hard':
+                $score = 150;
+                break;
+        }
+        update_post_meta($post_id, '_tribus_score', $score);
     }
 }
 add_action( 'save_post', 'tribus_save_challenge_meta' );

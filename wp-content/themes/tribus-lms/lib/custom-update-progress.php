@@ -4,6 +4,9 @@ function custom_update_user_progress_endpoint(): void
     register_rest_route('custom/v1', '/progress', array(
         'methods' => 'POST',
         'callback' => 'custom_update_user_progress',
+        'permission_callback' => function () {
+            return is_user_logged_in(); // Ensure the user is logged in
+        }
     ));
 }
 add_action('rest_api_init', 'custom_update_user_progress_endpoint');
@@ -20,18 +23,42 @@ function custom_update_user_progress(WP_REST_Request $request): WP_Error|WP_REST
     // Get the current list of completed challenges
     $completed_challenges = get_user_meta($user_id, 'completed_challenges', true);
 
+    // Get users score
+    $current_score = get_user_meta($user_id, 'score', true);
+
     // Ensure it's an array
     if (!is_array($completed_challenges)) {
         $completed_challenges = array();
     }
 
-    // Add the new challenge ID to the array if not already present
-    if (!in_array($challenge_id, $completed_challenges)) {
-        $completed_challenges[] = $challenge_id;
-        update_user_meta($user_id, 'completed_challenges', $completed_challenges);
+    // Check if the challenge is already completed
+    if (in_array($challenge_id, $completed_challenges)) {
+        return new WP_REST_Response(array(
+            'message' => 'This challenge has already been completed.',
+            'completed_challenges' => $completed_challenges,
+        ), 200); // Return with 200 status
     }
 
-    return new WP_REST_Response(array('message' => 'Challenge marked as completed', 'completed_challenges' => $completed_challenges), 200);
+    // Get users score
+    $current_score = get_user_meta($user_id, 'score', true);
+
+    // Add the new challenge ID to the array
+    $completed_challenges[] = $challenge_id;
+    update_user_meta($user_id, 'completed_challenges', $completed_challenges);
+
+    // Get the challenge score
+    $score = get_post_meta($challenge_id, '_tribus_score', true);
+
+    $current_score = empty($current_score) ? 0 : intval($current_score);
+    $new_score = $current_score + $score;
+
+    update_user_meta($user_id, 'score', $new_score);
+
+    return new WP_REST_Response(array(
+        'message' => 'Challenge marked as completed',
+        'completed_challenges' => $completed_challenges,
+        'new_score' => $new_score,
+    ), 200);
 }
 
 
