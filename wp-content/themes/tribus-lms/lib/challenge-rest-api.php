@@ -9,7 +9,7 @@ function tribus_register_challenge_meta_rest_fields(): void
         'show_in_rest' => true, // Enable it for the REST API
     ));
 
-    // Register test_cases meta field for the REST API
+    // Register the test input and output.
     register_meta('post', '_tribus_test_cases', array(
         'type'         => 'array',
         'description'  => 'Test cases for the challenge',
@@ -20,17 +20,11 @@ function tribus_register_challenge_meta_rest_fields(): void
                 'items'      => array(
                     'type'       => 'object',
                     'properties' => array(
-                        'input'  => array(
-                            'type' => 'string',
-                        ),
-                        'output' => array(
-                            'type' => 'string',
-                        ),
+                        'input'  => array( 'type' => 'string' ),
+                        'output' => array( 'type' => 'string' ),
                     ),
                 ),
             ),
-            'get_callback' => 'tribus_get_test_cases', //TODO Custom function to retrieve the test cases TO IMPLEMENT LATER
-            'update_callback' => 'tribus_update_test_cases', //TODO Custom function to update test cases TO IMPLEMENT LATER
         ),
     ));
 

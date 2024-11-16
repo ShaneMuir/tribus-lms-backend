@@ -28,15 +28,16 @@ function tribus_challenge_details_callback( $post ): void
         <textarea id="tribus_starter_code" name="tribus_starter_code" rows="8" style="width: 100%;"><?php echo esc_textarea( $starter_code ); ?></textarea>
     </p>
 
-    <!-- Test Cases Repeater -->
     <h4>Test Cases:</h4>
     <div id="tribus-test-cases">
         <?php foreach ( $test_cases as $index => $test_case ) : ?>
             <div class="tribus-test-case" style="margin-bottom: 1rem;">
                 <label>Test Input:</label>
-                <input type="text" name="tribus_test_cases[<?php echo $index; ?>][input]" value="<?php echo esc_attr( $test_case['input'] ); ?>" style="width: 45%; margin-right: 5%;">
+                <textarea id="tribus_test_cases_input_<?php echo $index; ?>" name="tribus_test_cases[<?php echo $index; ?>][input]" rows="4" style="width: 45%; margin-right: 5%;"><?php echo esc_textarea( $test_case['input'] ); ?></textarea>
+
                 <label>Expected Output:</label>
-                <input type="text" name="tribus_test_cases[<?php echo $index; ?>][output]" value="<?php echo esc_attr( $test_case['output'] ); ?>" style="width: 45%;">
+                <textarea id="tribus_test_cases_output_<?php echo $index; ?>" name="tribus_test_cases[<?php echo $index; ?>][output]" rows="4" style="width: 45%;"><?php echo esc_textarea( $test_case['output'] ); ?></textarea>
+
                 <button type="button" class="button remove-test-case" style="color: red; margin-left: 5px;">Remove</button>
             </div>
         <?php endforeach; ?>
@@ -44,30 +45,44 @@ function tribus_challenge_details_callback( $post ): void
     <button type="button" class="button add-test-case">Add Test Case</button>
 
     <script>
-        (function($){
-            $(document).ready(function() {
-                var testCaseIndex = <?php echo count( $test_cases ); ?>;
+        jQuery( document ).ready( function( $ ) {
+            var editorSettings = wp.codeEditor.defaultSettings ? _.clone( wp.codeEditor.defaultSettings ) : {};
+            editorSettings.codemirror = _.extend(
+                {},
+                editorSettings.codemirror,
+                {
+                    indentUnit: 4,
+                    tabSize: 4,
+                    mode: 'application/x-httpd-php'
+                }
+            );
 
-                // Add new test case
-                $('.add-test-case').on('click', function() {
-                    var newTestCase = '<div class="tribus-test-case" style="margin-bottom: 1rem;">' +
-                        '<label>Test Input:</label>' +
-                        '<input type="text" name="tribus_test_cases[' + testCaseIndex + '][input]" value="" style="width: 45%; margin-right: 5%;">' +
-                        '<label>Expected Output:</label>' +
-                        '<input type="text" name="tribus_test_cases[' + testCaseIndex + '][output]" value="" style="width: 45%;">' +
-                        '<button type="button" class="button remove-test-case" style="color: red; margin-left: 5px;">Remove</button>' +
-                        '</div>';
-                    $('#tribus-test-cases').append(newTestCase);
-                    testCaseIndex++;
-                });
+            var testCaseIndex = <?php echo count( $test_cases ); ?>;
+            $('.add-test-case').on('click', function() {
+                var newTestCaseHTML = `
+                <div class="tribus-test-case" style="margin-bottom: 1rem;">
+                    <label>Test Input:</label>
+                    <textarea id="tribus_test_cases_input_${testCaseIndex}" name="tribus_test_cases[${testCaseIndex}][input]" rows="4" style="width: 45%; margin-right: 5%;"></textarea>
 
-                // Remove test case
-                $(document).on('click', '.remove-test-case', function() {
-                    $(this).parent().remove();
-                });
+                    <label>Expected Output:</label>
+                    <textarea id="tribus_test_cases_output_${testCaseIndex}" name="tribus_test_cases[${testCaseIndex}][output]" rows="4" style="width: 45%;"></textarea>
+
+                    <button type="button" class="button remove-test-case" style="color: red; margin-left: 5px;">Remove</button>
+                </div>`;
+                $('#tribus-test-cases').append(newTestCaseHTML);
+
+                wp.codeEditor.initialize( $( `#tribus_test_cases_input_${testCaseIndex}` ), editorSettings );
+                wp.codeEditor.initialize( $( `#tribus_test_cases_output_${testCaseIndex}` ), editorSettings );
+
+                testCaseIndex++;
             });
-        })(jQuery);
+
+            $(document).on('click', '.remove-test-case', function() {
+                $(this).parent().remove();
+            });
+        });
     </script>
+
 
     <!-- Difficulty Field -->
     <p>

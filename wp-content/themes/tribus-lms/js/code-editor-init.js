@@ -10,4 +10,11 @@ jQuery( document ).ready( function( $ ) {
         }
     );
     var starterCodeEditor = wp.codeEditor.initialize( $( '#tribus_starter_code' ), editorSettings );
+
+    $( '[id^=tribus_test_cases_input_]' ).each( function() {
+        wp.codeEditor.initialize( $( this ), editorSettings );
+    });
+    $( '[id^=tribus_test_cases_output_]' ).each( function() {
+        wp.codeEditor.initialize( $( this ), editorSettings );
+    });
 });

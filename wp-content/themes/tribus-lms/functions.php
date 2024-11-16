@@ -3,15 +3,13 @@
 //TODO: Think about how we can make the test cases input / output better. More dynamic.
 
 
-//TODO: Add custom DB table or CPT for keep track of users progress and rank.
-    //TODO: Added user progress and rank onto the usermeta on users profile.
+//TODO: Add custom DB table or CPT for keep track of users progress and rank. (currently using user tables)
+    //TODO: Added user progress and rank onto the usermeta on users profile. (score and progress added, need to do rank)
 
-//TODO: Create REST endpoints for completing challenges, check if challenges are complete, updating user score/rank and so on
+//TODO: Create REST endpoints for completing challenges, check if challenges are complete, updating user score/rank and so on (built and working, probably need a lot more adding)
 
 
 //TODO: Style up the backend
-
-
 
 //TODO: Make WP compliant
 
